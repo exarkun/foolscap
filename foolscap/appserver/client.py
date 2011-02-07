@@ -102,15 +102,18 @@ class RunCommand(Referenceable, Protocol):
         return self.d
 
     def dataReceived(self, data):
+        #print >>sys.stderr, "stdin %d" % len(data)
         # this is from stdin. It shouldn't be called until after _started
         # sets up stdio and self.stdin_writer
         self.stdin_writer.callRemoteOnly("feed_stdin", data)
 
     def connectionLost(self, reason):
+        #print >>sys.stderr, "stdin connectionLost", reason.value
         # likewise, this won't be called unless _started wanted stdin
         self.stdin_writer.callRemoteOnly("close_stdin")
 
     def _started(self, stdin_writer):
+        #print >>sys.stderr, "_started"
         if stdin_writer:
             self.stdin_writer = stdin_writer # rref
             self.stdio(self) # start accepting stdin
@@ -119,9 +122,11 @@ class RunCommand(Referenceable, Protocol):
     def remote_stdout(self, data):
         self.stdout.write(data)
         self.stdout.flush()
+        #print >>sys.stderr, "%d stdout" % len(data)
     def remote_stderr(self, data):
         self.stderr.write(data)
         self.stderr.flush()
+        #print >>sys.stderr, "%d stderr" % len(data), data
     def remote_done(self, signal, exitcode):
         if signal:
             self._done(127)
@@ -131,6 +136,7 @@ class RunCommand(Referenceable, Protocol):
         self._done(f)
     def _done(self, res):
         if not self.done:
+            #print >>sys.stderr, "%s done" % res
             self.done = True
             self.d.callback(res)
 
